@@ -4,18 +4,27 @@ use crate::{
     BlockHashProvider, BlockIdProvider, BlockProvider, EvmEnvProvider, HeaderProvider,
     ProviderError, StateProviderBox, TransactionsProvider, WithdrawalsProvider,
 };
-use reth_db::{cursor::DbCursorRO, database::Database, tables, transaction::DbTx};
+use reth_db::{
+    cursor::DbCursorRO,
+    database::{Database, DatabaseGAT},
+    tables,
+    transaction::{DbTx, DbTxMut},
+};
 use reth_interfaces::Result;
 use reth_primitives::{
-    Block, BlockHash, BlockId, BlockNumber, ChainInfo, ChainSpec, Hardfork, Head, Header, Receipt,
-    SealedBlock, TransactionMeta, TransactionSigned, TxHash, TxNumber, Withdrawal, H256, U256,
+    rpc::Transaction, Block, BlockHash, BlockId, BlockNumber, ChainInfo, ChainSpec, Hardfork, Head,
+    Header, Receipt, SealedBlock, TransactionMeta, TransactionSigned, TxHash, TxNumber, Withdrawal,
+    H160, H256, U256,
 };
 use reth_revm_primitives::{
     config::revm_spec,
     env::{fill_block_env, fill_cfg_and_block_env, fill_cfg_env},
     primitives::{BlockEnv, CfgEnv, SpecId},
 };
-use std::{ops::RangeBounds, sync::Arc};
+use std::{
+    ops::RangeBounds,
+    sync::{atomic::AtomicBool, Arc},
+};
 use tracing::trace;
 
 /// A common provider that fetches data from a database.
@@ -27,7 +36,61 @@ pub struct ShareableDatabase<DB> {
     db: DB,
     /// Chain spec
     chain_spec: Arc<ChainSpec>,
+    // Has write tx open.
+    //write_tx: Arc<AtomicBool>,
 }
+
+impl<DB: Database> ShareableDatabase<DB> {
+    pub fn provider(&self) -> Result<ProviderRO<'_, DB>> {
+        Ok(Provider { tx: self.db.tx()?, _phantom_data: std::marker::PhantomData })
+    }
+
+    pub fn provider_rw(&self) -> Result<ProviderRW<'_, DB>> {
+        Ok(Provider { tx: self.db.tx_mut()?, _phantom_data: std::marker::PhantomData })
+    }
+
+    pub fn test(&self) {
+        let provider = self.provider().unwrap();
+        let _ = provider.get();
+
+        let provider = self.provider_rw().unwrap();
+        let _ = provider.get();
+        let _ = provider.commit();
+    }
+}
+
+type ProviderRO<'this, DB> = Provider<'this, <DB as DatabaseGAT<'this>>::TX>;
+
+type ProviderRW<'this, DB> = Provider<'this, <DB as DatabaseGAT<'this>>::TXMut>;
+
+pub struct Provider<'this, TX>
+where
+    Self: 'this,
+{
+    tx: TX,
+    _phantom_data: std::marker::PhantomData<&'this ()>,
+}
+
+impl<'this, TX: DbTxMut<'this> + DbTx<'this>> Provider<'this, TX> {
+    /// commit tx
+    pub fn commit(self) -> Result<bool> {
+        Ok(self.tx.commit()?)
+    }
+
+    /// commit tx
+    pub fn write(self) -> Result<bool> {
+        Ok(self.tx.commit()?)
+    }
+}
+
+impl<'this, TX: DbTx<'this>> Provider<'this, TX> {
+    /// get
+    pub fn get(&self) -> Result<Option<u64>> {
+        Ok(self.tx.get::<tables::HeaderNumbers>(H256([0x11; 32]))?)
+    }
+}
+
+//pub fn tx
 
 impl<DB> ShareableDatabase<DB> {
     /// create new database provider
@@ -57,7 +120,7 @@ impl<DB: Database> ShareableDatabase<DB> {
         let tx = self.db.tx()?;
 
         if is_latest_block_number(&tx, block_number)? {
-            return Ok(Box::new(LatestStateProvider::new(tx)))
+            return Ok(Box::new(LatestStateProvider::new(tx)));
         }
 
         // +1 as the changeset that we want is the one that was applied after this block.
@@ -76,7 +139,7 @@ impl<DB: Database> ShareableDatabase<DB> {
             .ok_or(ProviderError::BlockHash { block_hash })?;
 
         if is_latest_block_number(&tx, block_number)? {
-            return Ok(Box::new(LatestStateProvider::new(tx)))
+            return Ok(Box::new(LatestStateProvider::new(tx)));
         }
 
         // +1 as the changeset that we want is the one that was applied after this block.
@@ -191,7 +254,7 @@ impl<DB: Database> BlockProvider for ShareableDatabase<DB> {
                     body: transactions,
                     ommers: ommers.unwrap_or_default(),
                     withdrawals,
-                }))
+                }));
             }
         }
 
@@ -207,7 +270,7 @@ impl<DB: Database> BlockProvider for ShareableDatabase<DB> {
             let tx = self.db.tx()?;
             // TODO: this can be optimized to return empty Vec post-merge
             let ommers = tx.get::<tables::BlockOmmers>(number)?.map(|o| o.ommers);
-            return Ok(ommers)
+            return Ok(ommers);
         }
 
         Ok(None)
@@ -272,7 +335,7 @@ impl<DB: Database> TransactionsProvider for ShareableDatabase<DB> {
                                         base_fee: header.base_fee_per_gas,
                                     };
 
-                                    return Ok(Some((transaction.into(), meta)))
+                                    return Ok(Some((transaction.into(), meta)));
                                 }
                             }
                         }
@@ -307,7 +370,7 @@ impl<DB: Database> TransactionsProvider for ShareableDatabase<DB> {
                         .map(|result| result.map(|(_, tx)| tx.into()))
                         .collect::<std::result::Result<Vec<_>, _>>()?;
                     Ok(Some(transactions))
-                }
+                };
             }
         }
         Ok(None)
@@ -370,7 +433,7 @@ impl<DB: Database> ReceiptProvider for ShareableDatabase<DB> {
                         .map(|result| result.map(|(_, tx)| tx))
                         .collect::<std::result::Result<Vec<_>, _>>()?;
                     Ok(Some(transactions))
-                }
+                };
             }
         }
         Ok(None)
@@ -388,7 +451,7 @@ impl<DB: Database> WithdrawalsProvider for ShareableDatabase<DB> {
                         .view(|tx| tx.get::<tables::BlockWithdrawals>(number))??
                         .map(|w| w.withdrawals)
                         .unwrap_or_default(),
-                ))
+                ));
             }
         }
         Ok(None)
@@ -549,5 +612,17 @@ mod tests {
         assert_eq!(chain_info.best_hash, H256::zero());
         assert_eq!(chain_info.last_finalized, None);
         assert_eq!(chain_info.safe_finalized, None);
+    }
+
+    #[test]
+    fn provider_flow() {
+        let chain_spec = ChainSpecBuilder::mainnet().build();
+        let db = create_test_db::<WriteMap>(EnvKind::RW);
+        let db = ShareableDatabase::new(db, Arc::new(chain_spec));
+        let provider = db.provider().unwrap();
+        provider.get().unwrap();
+        let provider_rw = db.provider_rw().unwrap();
+        provider_rw.get().unwrap();
+        provider.get().unwrap();
     }
 }
