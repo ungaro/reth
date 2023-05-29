@@ -4,7 +4,7 @@ use crate::{
     BlockHashProvider, BlockNumProvider, BlockProvider, EvmEnvProvider, HeaderProvider,
     ProviderError, StateProviderBox, TransactionsProvider, WithdrawalsProvider,
 };
-use reth_db::{database::Database, tables, transaction::DbTx};
+use reth_db::{database::{Database, DatabaseGAT}, tables, transaction::DbTx};
 use reth_interfaces::Result;
 use reth_primitives::{
     Block, BlockHash, BlockHashOrNumber, BlockNumber, ChainInfo, ChainSpec, Header, Receipt,
@@ -43,6 +43,18 @@ impl<DB: Database> ShareableDatabase<DB> {
     pub fn provider_rw(&self) -> Result<ProviderRW<'_, DB>> {
         Ok(Provider::new_rw(self.db.tx_mut()?, self.chain_spec.clone()))
     }
+
+    pub fn tx(&self) -> <DB as DatabaseGAT<'_>>::TX {
+        self.db.tx().unwrap()
+    }
+
+    pub fn tx_rw(&self) -> <DB as DatabaseGAT<'_>>::TXMut {
+        self.db.tx_mut().unwrap()
+    }
+}
+
+pub fn testt<PT:ProviderTrait>(pt: PT) -> U256 {
+    pt.txx()
 }
 
 impl<DB> ShareableDatabase<DB> {
@@ -284,7 +296,7 @@ impl<DB: Database> EvmEnvProvider for ShareableDatabase<DB> {
 
 #[cfg(test)]
 mod tests {
-    use super::ShareableDatabase;
+    use super::{ShareableDatabase, provider::ProviderTrait, testt};
     use crate::{BlockHashProvider, BlockNumProvider};
     use reth_db::mdbx::{test_utils::create_test_db, EnvKind, WriteMap};
     use reth_primitives::{ChainSpecBuilder, H256};
@@ -320,5 +332,9 @@ mod tests {
         let provider_rw = db.provider_rw().unwrap();
         provider_rw.block_hash(0).unwrap();
         provider.block_hash(0).unwrap();
+
+        let tx = db.tx_rw();
+        let write_back = tx.txx();
+        let t = testt(tx);
     }
 }

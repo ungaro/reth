@@ -26,6 +26,8 @@ pub(crate) type ProviderRO<'this, DB> = Provider<'this, <DB as DatabaseGAT<'this
 
 pub(crate) type ProviderRW<'this, DB> = Provider<'this, <DB as DatabaseGAT<'this>>::TXMut>;
 
+
+
 /// Provider struct which allows to interface with the database using different types of providers.
 /// Wrapper around [`DbTx`] and [`DbTxMut`]. Example: [`HeaderProvider`] [`BlockHashProvider`]
 pub struct Provider<'this, TX>
@@ -47,6 +49,16 @@ impl<'this, TX: DbTxMut<'this>> Provider<'this, TX> {
 impl<'this, TX: DbTx<'this>> Provider<'this, TX> {
     pub fn new(tx: TX, chain_spec: Arc<ChainSpec>) -> Self {
         Self { tx, chain_spec, _phantom_data: std::marker::PhantomData }
+    }
+}
+
+pub trait ProviderTrait {
+    fn txx(&self) -> U256;
+}
+
+impl<'this, T: DbTx<'this>> ProviderTrait for T {
+    fn txx(&self) -> U256 {
+        U256::ZERO
     }
 }
 
