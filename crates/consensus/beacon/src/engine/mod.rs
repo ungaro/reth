@@ -963,7 +963,7 @@ where
         &mut self,
         block_hash: H256,
     ) -> Result<bool, reth_interfaces::Error> {
-        let synced_to_finalized = match self.blockchain.block_number(block_hash)? {
+        let synced_to_block = match self.blockchain.block_number(block_hash)? {
             Some(number) => {
                 // Attempt to restore the tree.
                 self.blockchain.restore_canonical_hashes(number)?;
@@ -971,7 +971,7 @@ where
             }
             None => false,
         };
-        Ok(synced_to_finalized)
+        Ok(synced_to_block)
     }
 
     /// Invoked if we successfully downloaded a new block from the network.
@@ -1023,6 +1023,8 @@ where
                         self.try_make_sync_target_canonical(num_hash);
                     }
                     BlockStatus::Disconnected { missing_parent } => {
+                        // TODO: check distance to local head and trigger pipeline if necessary
+
                         // continue downloading the missing parent
                         self.sync.download_full_block(missing_parent.hash);
                     }
