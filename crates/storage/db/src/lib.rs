@@ -85,10 +85,13 @@ pub use utils::is_database_empty;
 
 /// Bindings for [MDBX](https://libmdbx.dqdkfa.ru/).
 #[cfg(feature = "mdbx")]
-pub mod mdbx {
-    pub use crate::implementation::mdbx::*;
-    pub use reth_libmdbx::*;
-}
+pub use crate::implementation::mdbx;
+
+#[cfg(feature = "redb")]
+pub use crate::implementation::redb;
+
+// todo: make redb/mdbx not mutually exclusive features or rm mdbx
+// todo: build docs with the feature thing where u can see the features u need to enable
 
 #[cfg(feature = "mdbx")]
 use mdbx::{Env, EnvKind, NoWriteMap, WriteMap};
@@ -100,6 +103,15 @@ pub type DatabaseEnv = Env<WriteMap>;
 /// Alias type for the database engine in use. Read only mode.
 #[cfg(feature = "mdbx")]
 pub type DatabaseEnvRO = Env<NoWriteMap>;
+
+/// Alias type for the database environment in use. Read/Write mode.
+// todo: wrapper that enforces ro/rw
+#[cfg(feature = "redb")]
+pub type DatabaseEnv = ::redb::Database;
+
+/// Alias type for the database engine in use. Read only mode.
+#[cfg(feature = "redb")]
+pub type DatabaseEnvRO = ::redb::Database;
 
 /// Opens up an existing database or creates a new one at the specified path. Creates tables if
 /// necessary. Read/Write mode.
@@ -118,10 +130,16 @@ pub fn init_db<P: AsRef<Path>>(path: P, log_level: Option<LogLevel>) -> eyre::Re
             Err(err) => return Err(err.into()),
         }
     }
+
     #[cfg(feature = "mdbx")]
     {
         let db = DatabaseEnv::open(rpath, EnvKind::RW, log_level)?;
         db.create_tables()?;
+        return Ok(db)
+    }
+    #[cfg(feature = "redb")]
+    {
+        let db = ::redb::Database::create(rpath)?;
         return Ok(db)
     }
 
@@ -135,9 +153,16 @@ pub fn open_db_read_only(path: &Path, log_level: Option<LogLevel>) -> eyre::Resu
         return Env::<NoWriteMap>::open(path, EnvKind::RO, log_level)
             .with_context(|| format!("Could not open database at path: {}", path.display()))
     }
+    #[cfg(feature = "redb")]
+    {
+        let db = ::redb::Database::create(path)?;
+        return Ok(db)
+    }
+
     unimplemented!();
 }
 
+// todo: this is prob unnecessary - creating tables twice shouldnt do anything
 /// Opens up an existing database. Read/Write mode. It doesn't create it or create tables if
 /// missing.
 pub fn open_db(path: &Path, log_level: Option<LogLevel>) -> eyre::Result<DatabaseEnv> {
@@ -145,6 +170,11 @@ pub fn open_db(path: &Path, log_level: Option<LogLevel>) -> eyre::Result<Databas
     {
         return Env::<WriteMap>::open(path, EnvKind::RW, log_level)
             .with_context(|| format!("Could not open database at path: {}", path.display()))
+    }
+    #[cfg(feature = "redb")]
+    {
+        let db = ::redb::Database::create(path)?;
+        return Ok(db)
     }
     unimplemented!();
 }

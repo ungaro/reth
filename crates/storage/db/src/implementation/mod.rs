@@ -1,2 +1,5 @@
 #[cfg(feature = "mdbx")]
-pub(crate) mod mdbx;
+pub mod mdbx;
+
+#[cfg(feature = "redb")]
+pub mod redb;

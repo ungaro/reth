@@ -15,6 +15,7 @@ reth-interfaces.workspace = true
 reth-codecs = { path = "../codecs" }
 reth-libmdbx = { path = "../libmdbx-rs", optional = true, features = ["return-borrowed"] }
 reth-metrics.workspace = true
+redb = { version = "1.0.5", optional = true }
 
 # codecs
 serde = { workspace = true, default-features = false }
@@ -79,11 +80,10 @@ assert_matches = "1.5.0"
 vergen = { version = "8.0.0", features = ["git", "gitcl"] }
 
 [features]
-default = ["mdbx"]
+default = ["redb"]
+redb = ["dep:redb"]
+mdbx = ["dep:reth-libmdbx"]
 test-utils = ["tempfile", "arbitrary"]
-bench-postcard = ["bench"]
-mdbx = ["reth-libmdbx"]
-bench = []
 arbitrary = [
     "reth-primitives/arbitrary",
     "reth-codecs/arbitrary",
@@ -91,6 +91,8 @@ arbitrary = [
     "dep:proptest",
     "dep:proptest-derive",
 ]
+bench-postcard = ["bench"]
+bench = []
 
 [[bench]]
 name = "hash_keys"
