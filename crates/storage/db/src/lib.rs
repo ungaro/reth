@@ -139,6 +139,7 @@ pub fn init_db<P: AsRef<Path>>(path: P, log_level: Option<LogLevel>) -> eyre::Re
     }
     #[cfg(feature = "redb")]
     {
+        // todo: use builder to set cache size (default 1g)
         let db = ::redb::Database::create(rpath)?;
         return Ok(db)
     }

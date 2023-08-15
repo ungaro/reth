@@ -8,6 +8,15 @@ use crate::{
 };
 use reth_interfaces::db::DatabaseError;
 
+// todo: only possible to get stats via writetransaction????
+
+// todo: move stuff to modules
+
+// todo: cursors operate on tables
+// - ro table: ReadOnlyTable<K, V>
+// - ro multimap: ReadOnlyMultimapTable<K, V>
+// - rw table: Table<K, V>
+// - rw multimap: MultimapTable<K, V>
 pub struct Cursor<'tx, T> {
     _todo: &'tx T,
 }
@@ -101,6 +110,7 @@ impl<'tx, T: Table> DbCursorRW<'tx, T> for Cursor<'tx, T> {
     }
 }
 
+// todo: verify that the tx is *aborted* on drop (as is the case w mdbx)
 pub struct Wt<'a>(&'a redb::WriteTransaction<'a>);
 
 impl<'a> std::fmt::Debug for Wt<'a> {
@@ -128,11 +138,11 @@ impl<'a> DbTx<'a> for Wt<'a> {
     }
 
     fn commit(self) -> Result<bool, DatabaseError> {
-        todo!()
+        // noop
     }
 
     fn drop(self) {
-        todo!()
+        // noop
     }
 
     fn cursor_read<T: Table>(&self) -> Result<<Self as DbTxGAT<'_>>::Cursor<T>, DatabaseError> {
@@ -197,15 +207,20 @@ impl<'a> DbTxGAT<'a> for Rt<'_> {
 
 impl<'a> DbTx<'a> for Rt<'a> {
     fn get<T: Table>(&self, key: T::Key) -> Result<Option<T::Value>, DatabaseError> {
+        // todo: is it ok to cache table handles? (check type size and side effects)
         todo!()
     }
 
     fn commit(self) -> Result<bool, DatabaseError> {
-        todo!()
+        // todo err
+        self.commit().unwrap();
+        // todo: what is the bool
+        Ok(true)
     }
 
     fn drop(self) {
-        todo!()
+        // todo: this can fail - why?
+        self.abort().unwrap();
     }
 
     fn cursor_read<T: Table>(&self) -> Result<<Self as DbTxGAT<'_>>::Cursor<T>, DatabaseError> {
