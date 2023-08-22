@@ -5771,6 +5771,7 @@ dependencies = [
  "reth-revm-primitives",
  "reth-rlp",
  "reth-rpc-types",
+ "reth-transaction-pool",
  "revm-primitives",
  "sha2 0.10.7",
  "thiserror",
