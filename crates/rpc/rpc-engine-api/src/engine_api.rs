@@ -11,8 +11,8 @@ use reth_provider::{BlockReader, EvmEnvProvider, HeaderProvider, StateProviderFa
 use reth_rpc_api::EngineApiServer;
 use reth_rpc_types::engine::{
     ExecutionPayloadBodiesV1, ExecutionPayloadEnvelopeV2, ExecutionPayloadEnvelopeV3,
-    ExecutionPayloadV1, ForkchoiceUpdated, PayloadAttributes, PayloadId, PayloadStatus,
-    TransitionConfiguration, CAPABILITIES,
+    ExecutionPayloadV1, ExecutionPayloadV3, ForkchoiceUpdated, PayloadAttributes, PayloadId,
+    PayloadStatus, TransitionConfiguration, CAPABILITIES,
 };
 use reth_tasks::TaskSpawner;
 use std::sync::Arc;
@@ -469,7 +469,7 @@ where
 
     async fn new_payload_v3(
         &self,
-        _payload: ExecutionPayloadV1,
+        _payload: ExecutionPayloadV3,
         _versioned_hashes: Vec<H256>,
         _parent_beacon_block_root: H256,
     ) -> RpcResult<PayloadStatus> {
