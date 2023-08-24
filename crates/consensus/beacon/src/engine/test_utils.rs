@@ -27,7 +27,9 @@ use reth_provider::{
 };
 use reth_prune::{BatchSizes, Pruner};
 use reth_revm::Factory;
-use reth_rpc_types::engine::{ExecutionPayload, ForkchoiceState, ForkchoiceUpdated, PayloadStatus};
+use reth_rpc_types::engine::{
+    ExecutionPayloadV1, ForkchoiceState, ForkchoiceUpdated, PayloadStatus,
+};
 use reth_stages::{
     sets::DefaultStages, stages::HeaderSyncMode, test_utils::TestStages, ExecOutput, Pipeline,
     StageError,
@@ -68,7 +70,7 @@ impl<DB> TestEnv<DB> {
 
     pub async fn send_new_payload(
         &self,
-        payload: ExecutionPayload,
+        payload: ExecutionPayloadV1,
     ) -> Result<PayloadStatus, BeaconOnNewPayloadError> {
         self.engine_handle.new_payload(payload).await
     }
@@ -77,7 +79,7 @@ impl<DB> TestEnv<DB> {
     /// is syncing.
     pub async fn send_new_payload_retry_on_syncing(
         &self,
-        payload: ExecutionPayload,
+        payload: ExecutionPayloadV1,
     ) -> Result<PayloadStatus, BeaconOnNewPayloadError> {
         loop {
             let result = self.send_new_payload(payload.clone()).await?;

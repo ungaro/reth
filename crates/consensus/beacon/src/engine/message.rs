@@ -6,7 +6,7 @@ use futures::{future::Either, FutureExt};
 use reth_interfaces::consensus::ForkchoiceState;
 use reth_payload_builder::error::PayloadBuilderError;
 use reth_rpc_types::engine::{
-    ExecutionPayload, ForkChoiceUpdateResult, ForkchoiceUpdateError, ForkchoiceUpdated,
+    ExecutionPayloadV1, ForkChoiceUpdateResult, ForkchoiceUpdateError, ForkchoiceUpdated,
     PayloadAttributes, PayloadId, PayloadStatus, PayloadStatusEnum,
 };
 use std::{
@@ -145,7 +145,7 @@ pub enum BeaconEngineMessage {
     /// Message with new payload.
     NewPayload {
         /// The execution payload received by Engine API.
-        payload: ExecutionPayload,
+        payload: ExecutionPayloadV1,
         /// The sender for returning payload status result.
         tx: oneshot::Sender<Result<PayloadStatus, BeaconOnNewPayloadError>>,
     },

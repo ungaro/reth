@@ -31,7 +31,7 @@ use reth_provider::{
 };
 use reth_prune::Pruner;
 use reth_rpc_types::engine::{
-    ExecutionPayload, PayloadAttributes, PayloadStatus, PayloadStatusEnum, PayloadValidationError,
+    ExecutionPayloadV1, PayloadAttributes, PayloadStatus, PayloadStatusEnum, PayloadValidationError,
 };
 use reth_stages::{ControlFlow, Pipeline, PipelineError};
 use reth_tasks::TaskSpawner;
@@ -1052,7 +1052,7 @@ where
     #[instrument(level = "trace", skip(self, payload), fields(block_hash= ?payload.block_hash, block_number = %payload.block_number.as_u64(), is_pipeline_idle = %self.sync.is_pipeline_idle()), target = "consensus::engine")]
     fn on_new_payload(
         &mut self,
-        payload: ExecutionPayload,
+        payload: ExecutionPayloadV1,
     ) -> Result<PayloadStatus, BeaconOnNewPayloadError> {
         let block = match self.ensure_well_formed_payload(payload) {
             Ok(block) => block,
@@ -1117,7 +1117,7 @@ where
     ///    - invalid transactions
     fn ensure_well_formed_payload(
         &self,
-        payload: ExecutionPayload,
+        payload: ExecutionPayloadV1,
     ) -> Result<SealedBlock, PayloadStatus> {
         let parent_hash = payload.parent_hash;
         let block = match SealedBlock::try_from(payload) {
