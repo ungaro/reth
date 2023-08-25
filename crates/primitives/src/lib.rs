@@ -61,11 +61,12 @@ pub use block::{
 pub use bloom::Bloom;
 pub use chain::{
     AllGenesisFormats, BaseFeeParams, Chain, ChainInfo, ChainSpec, ChainSpecBuilder,
-    DisplayHardforks, ForkCondition, ForkTimestamps, DEV, GOERLI, MAINNET, SEPOLIA,
+    DisplayHardforks, ForkCondition, ForkTimestamps, DEV, GOERLI, HOLESKY, MAINNET, SEPOLIA,
 };
 pub use compression::*;
 pub use constants::{
-    DEV_GENESIS, EMPTY_OMMER_ROOT, GOERLI_GENESIS, KECCAK_EMPTY, MAINNET_GENESIS, SEPOLIA_GENESIS,
+    DEV_GENESIS, EMPTY_OMMER_ROOT, GOERLI_GENESIS, HOLESKY_GENESIS, KECCAK_EMPTY, MAINNET_GENESIS,
+    SEPOLIA_GENESIS,
 };
 pub use eip4844::{calculate_excess_blob_gas, kzg_to_versioned_hash};
 pub use forkid::{ForkFilter, ForkHash, ForkId, ForkTransition, ValidationError};
@@ -76,8 +77,8 @@ pub use hex_bytes::Bytes;
 pub use integer_list::IntegerList;
 pub use log::Log;
 pub use net::{
-    goerli_nodes, mainnet_nodes, sepolia_nodes, NodeRecord, GOERLI_BOOTNODES, MAINNET_BOOTNODES,
-    SEPOLIA_BOOTNODES,
+    goerli_nodes, holesky_nodes, mainnet_nodes, sepolia_nodes, NodeRecord, GOERLI_BOOTNODES,
+    HOLESKY_BOOTNODES, MAINNET_BOOTNODES, SEPOLIA_BOOTNODES,
 };
 pub use peer::{PeerId, WithPeerId};
 pub use prune::{

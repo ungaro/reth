@@ -157,6 +157,49 @@ pub static SEPOLIA: Lazy<Arc<ChainSpec>> = Lazy::new(|| {
     .into()
 });
 
+/// The Holesky spec
+pub static HOLESKY: Lazy<Arc<ChainSpec>> = Lazy::new(|| {
+    ChainSpec {
+        // TODO: <https://github.com/gakonst/ethers-rs/pull/2569>
+        chain: Chain::Id(17000),
+        genesis: serde_json::from_str(include_str!("../../res/genesis/holesky.json"))
+            .expect("Can't deserialize Holesky genesis json"),
+        genesis_hash: Some(H256(hex!(
+            "ff9006519a8ce843ac9c28549d24211420b546e12ce2d170c77a8cca7964f23d"
+        ))),
+        paris_block_and_final_difficulty: Some((0, U256::from(1))),
+        fork_timestamps: ForkTimestamps::default().shanghai(1694790240),
+        hardforks: BTreeMap::from([
+            (Hardfork::Frontier, ForkCondition::Block(0)),
+            (Hardfork::Homestead, ForkCondition::Block(0)),
+            (Hardfork::Dao, ForkCondition::Block(0)),
+            (Hardfork::Tangerine, ForkCondition::Block(0)),
+            (Hardfork::SpuriousDragon, ForkCondition::Block(0)),
+            (Hardfork::Byzantium, ForkCondition::Block(0)),
+            (Hardfork::Constantinople, ForkCondition::Block(0)),
+            (Hardfork::Petersburg, ForkCondition::Block(0)),
+            (Hardfork::Istanbul, ForkCondition::Block(0)),
+            (Hardfork::MuirGlacier, ForkCondition::Block(0)),
+            (Hardfork::Berlin, ForkCondition::Block(0)),
+            (Hardfork::London, ForkCondition::Block(0)),
+            (
+                Hardfork::Paris,
+                ForkCondition::TTD { fork_block: None, total_difficulty: U256::ZERO },
+            ),
+            (Hardfork::Shanghai, ForkCondition::Timestamp(1694790240)),
+        ]),
+        // https://sepolia.etherscan.io/tx/0x025ecbf81a2f1220da6285d1701dc89fb5a956b62562ee922e1a9efd73eb4b14
+        deposit_contract: Some(DepositContract::new(
+            H160(hex!("4242424242424242424242424242424242424242")),
+            0,
+            H256(hex!("649bbc62d0e31342afea4e5cd82d4049e7e1ee912fc0889aa790803be39038c5")),
+        )),
+        base_fee_params: BaseFeeParams::ethereum(),
+        prune_batch_sizes: PruneBatchSizes::testnet(),
+    }
+    .into()
+});
+
 /// Dev testnet specification
 ///
 /// Includes 20 prefunded accounts with 10_000 ETH each derived from mnemonic "test test test test
@@ -1055,6 +1098,7 @@ mod tests {
     use bytes::BytesMut;
     use ethers_core::types as EtherType;
     use reth_rlp::Encodable;
+
     fn test_fork_ids(spec: &ChainSpec, cases: &[(Head, ForkId)]) {
         for (block, expected_id) in cases {
             let computed_id = spec.fork_id(block);

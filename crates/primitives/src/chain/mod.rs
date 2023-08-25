@@ -11,7 +11,7 @@ use std::{fmt, str::FromStr};
 mod spec;
 pub use spec::{
     AllGenesisFormats, BaseFeeParams, ChainSpec, ChainSpecBuilder, DisplayHardforks, ForkCondition,
-    ForkTimestamps, DEV, GOERLI, MAINNET, SEPOLIA,
+    ForkTimestamps, DEV, GOERLI, HOLESKY, MAINNET, SEPOLIA,
 };
 
 // The chain info module.
@@ -88,6 +88,7 @@ impl Chain {
             Mainnet => Some(mainnet_nodes()),
             Goerli => Some(goerli_nodes()),
             Sepolia => Some(sepolia_nodes()),
+            // TODO: 17000 => Some(holesky_nodes()),
             _ => None,
         }
     }
